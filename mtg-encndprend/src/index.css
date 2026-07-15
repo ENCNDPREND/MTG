@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;600;700&display=swap');
+
+:root {
+  /* Paleta de colores solicitada */
+  --color-white: #FFFFFF;
+  --color-blue: #003A9E;
+  --color-blue-dark: #142154;
+  --color-red: #80091B;
+  
+  /* Color de fondo para la app (gris muy claro para contraste) */
+  --color-bg: #F5F7FA; 
+  
+  /* Tipografía solicitada */
+  --font-jost: 'Jost', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-jost);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+/* Ideal para centrar la vista móvil en pantallas grandes */
+.app-container {
+  max-width: 420px;
+  margin: 0 auto;
+  background-color: var(--color-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+/* --- CABECERA (HEADER) --- */
+.header {
+  background-color: var(--color-blue);
+  color: var(--color-white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  font-size: 24px;
+}
+
+.header-logo {
+  height: 45px;
+  width: 45px;
+  object-fit: contain;
+}
+
+.header-icon {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--color-white);
+  font-size: 28px;
+}
+
+/* --- CUERPO PRINCIPAL --- */
+.main-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--color-blue-dark);
+  margin-bottom: -10px; /* Acerca el título a las tarjetas */
+}
+
+/* --- FILA DE TARJETAS (MAREO / SIN MAREO) --- */
+.cards-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.icon-arrow-transfer {
+  color: var(--color-blue);
+  font-size: 32px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- TARJETAS DE ESTADO (Untapeados / Tapeados) --- */
+.status-card {
+  background-color: var(--color-blue-dark);
+  color: var(--color-white);
+  border-radius: 12px;
+  padding: 15px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+}
+
+.status-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.status-card-image {
+  background-color: var(--color-white);
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  padding: 5px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.status-card-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.status-card-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.control-btn {
+  background: none;
+  border: none;
+  color: var(--color-white);
+  font-size: 32px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-jost);
+  line-height: 1;
+  padding: 0 5px;
+}
+
+.control-value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.control-stats {
+  font-size: 12px;
+  font-weight: 600;
+  align-self: flex-start;
+  margin-top: -8px;
+}
+
+/* --- CUADRÍCULA DE BOTONES DE ACCIÓN --- */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.action-btn {
+  border-radius: 8px;
+  border: none;
+  color: var(--color-white);
+  font-family: var(--font-jost);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  min-height: 75px;
+  transition: transform 0.1s ease;
+  line-height: 1.2;
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+/* Modificadores de color para los botones */
+.btn-blue { background-color: var(--color-blue); }
+.btn-red { background-color: var(--color-red); }
+.btn-dark { background-color: var(--color-blue-dark); }
+
+/* Botones con imagen (para los tokens extras) */
+.btn-image-container {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.btn-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-image-overlay {
+  position: absolute;
+  bottom: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-white);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+}
