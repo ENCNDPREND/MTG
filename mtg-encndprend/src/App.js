@@ -44,12 +44,20 @@ function App() {
   
   // Función helper: aplica los multiplicadores de Exalted y Ojer a CUALQUIER cantidad de tokens
   const applyTokenMultipliers = (baseTokens) => {
+    let multiplier = 1;
+    
+    // Exalted Sunborn: x2
     if (exaltedSunbornEnabled) {
-      return baseTokens * 2;
-    } else if (ojerTaqEnabled) {
-      return baseTokens * 3;
+      multiplier *= 2;
     }
-    return baseTokens;
+    
+    // Ojer Taq: x3
+    if (ojerTaqEnabled) {
+      multiplier *= 3;
+    }
+    
+    // Si ambos están activos: 2 * 3 = x6
+    return baseTokens * multiplier;
   };
   
   // Función para calcular tokens creados por Hare Apparent
@@ -209,7 +217,7 @@ function App() {
       type: 'prompt',
       onConfirm: () => {
         const parsedValue = Number(modalValue || 0);
-        if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+        if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
           closeModal();
           return;
         }
@@ -240,7 +248,7 @@ function App() {
       type: 'prompt',
       onConfirm: () => {
         const parsedValue = Number(modalValue || 0);
-        if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+        if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
           closeModal();
           return;
         }
@@ -399,12 +407,12 @@ function App() {
         </div>
 
         <section className="summary-card" aria-label="Resumen de estado">
-          <div>Enderezados sin mareo: {untappedNoMareo}</div>
-          <div>Girados sin mareo: {tappedNoMareo}</div>
-          <div>Enderezados mareados: {untappedMareado}</div>
-          <div>Girados mareados: {tappedMareado}</div>
-          <div>Cartas Hare: {hareCards}</div>
-          <div>Multiplicador: {multiplier}</div>
+          <div className="summary-data">Enderezados sin mareo: {untappedNoMareo}</div>
+          <div className="summary-data">Girados sin mareo: {tappedNoMareo}</div>
+          <div className="summary-data">Enderezados mareados: {untappedMareado}</div>
+          <div className="summary-data">Girados mareados: {tappedMareado}</div>
+          <div className="summary-data">Cartas Hare: {hareCards}</div>
+          <div className="summary-data">Multiplicador: {multiplier}</div>
         </section>
         </div>
 
