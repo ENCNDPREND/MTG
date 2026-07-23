@@ -377,7 +377,7 @@ function App() {
                 disabled={untappedNoMareo === 0}
                 aria-label="girar sin mareo"
               >
-                ↺
+                ↷
               </button>
 
               <StatCard
@@ -447,6 +447,11 @@ function App() {
                 className="cmd-btn"
                 onClick={() => { setUndoState(getSnapshot()); setCommanderCounters(c => Math.max(0, c - 1)); }}
               >▼</button>
+            </div>
+
+            {/* NUEVO: Caja de Fuerza y Resistencia (Base 4/3 + contadores) */}
+            <div className="commander-pt">
+              {4 + commanderCounters}/{3 + commanderCounters}
             </div>
           </div>
           <ActionButton onClick={() => handleCommanderAction(2)}>Añadir un mana</ActionButton>

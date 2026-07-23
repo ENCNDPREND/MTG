@@ -151,7 +151,6 @@
   width: 80px;
   height: 80px;
   border-radius: 6px;
-  background: white;
   color: #0b61d1;
   display: flex;
   align-items: center;
@@ -446,8 +445,8 @@
 .commander-controls {
   position: absolute;
   right: 4px;
-  top: 40%;
-  transform: translateY(-50%);
+  top: 8px; /* <-- Cambia este número para bajarlo o subirlo más */
+  /* transform: translateY(-50%); ELIMINAMOS ESTA LÍNEA */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -481,4 +480,37 @@
   font-size: 18px;
   margin: 2px 0;
   text-shadow: 1px 1px 2px black;
+}
+/* Ajustamos los controles para que se queden en la parte de arriba */
+.commander-controls {
+  position: absolute;
+  right: 4px; 
+  top: 4px; /* Lo subimos para dejar espacio abajo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  padding: 4px;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  z-index: 2;
+}
+
+/* Estilo para la caja de Fuerza / Resistencia */
+.commander-pt {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background-color: #e3dcc7; /* Beige clásico de borde de carta */
+  color: black;
+  font-weight: 900;
+  font-family: 'Georgia', serif; /* Tipografía estilo MTG */
+  font-size: 15px;
+  padding: 2px 6px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  box-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+  z-index: 2;
+  pointer-events: none; /* Evita interferir con cualquier clic */
 }
