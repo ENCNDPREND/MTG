@@ -57,9 +57,9 @@ function App() {
   const [untappedMareado, setUntappedMareado] = useState(0);
   const [tappedMareado, setTappedMareado] = useState(0);
   const [hareCards, setHareCards] = useState(0);
-  const [roamingThrone, setRoamingThrone] = useState(0);
-  const [exaltedSunborn, setExaltedSunborn] = useState(0);
-  const [ojerTaq, setOjerTaq] = useState(0);
+  const [roamingThronEnabled, setRoamingThroneEnabled] = useState(false);
+  const [exaltedSunbornEnabled, setExaltedSunbornEnabled] = useState(false);
+  const [ojerTaqEnabled, setOjerTaqEnabled] = useState(false);
   const [undoState, setUndoState] = useState(null);
   const [modalState, setModalState] = useState(null);
   const [modalValue, setModalValue] = useState('');
@@ -67,8 +67,35 @@ function App() {
   const hasNoMareo = untappedNoMareo + tappedNoMareo > 0;
   const hasMareado = untappedMareado + tappedMareado > 0;
   const totalRabbits = untappedNoMareo + tappedNoMareo + untappedMareado + tappedMareado;
-  const multiplier = 1 + 2 * (roamingThrone + exaltedSunborn + ojerTaq);
-  const duplicateMultiplier = 1 + 2 * (exaltedSunborn + ojerTaq);
+  
+  // Función helper: aplica los multiplicadores de Exalted y Ojer a CUALQUIER cantidad de tokens
+  const applyTokenMultipliers = (baseTokens) => {
+    if (exaltedSunbornEnabled) {
+      return baseTokens * 2;
+    } else if (ojerTaqEnabled) {
+      return baseTokens * 3;
+    }
+    return baseTokens;
+  };
+  
+  // Función para calcular tokens creados por Hare Apparent
+  // Base: (HareCards - 1) * HareCards
+  const calculateHareTokens = () => {
+    const baseTokens = Math.max(0, hareCards - 1) * hareCards;
+    
+    // Roaming Throne: hace que la habilidad se dispare 2 veces (SOLO en Hare)
+    let tokensAfterRoaming = roamingThronEnabled ? baseTokens * 2 : baseTokens;
+    
+    // Exalted Sunborn: duplica los tokens creados (x2)
+    // Ojer Taq: triplica los tokens creados (x3)
+    return applyTokenMultipliers(tokensAfterRoaming);
+  };
+  
+  // Multiplicador mostrado en la UI
+  const multiplier = calculateHareTokens() > 0 ? calculateHareTokens() / Math.max(0, hareCards - 1) / hareCards || 1 : 1;
+  
+  // Duplicate Tokens multiplier: Exalted duplica (x2), Ojer triplica (x3), Roaming NO afecta
+  const duplicateMultiplier = exaltedSunbornEnabled ? 2 : (ojerTaqEnabled ? 3 : 1);
 
   const getSnapshot = () => ({
     untappedNoMareo,
@@ -76,9 +103,9 @@ function App() {
     untappedMareado,
     tappedMareado,
     hareCards,
-    roamingThrone,
-    exaltedSunborn,
-    ojerTaq,
+    roamingThronEnabled,
+    exaltedSunbornEnabled,
+    ojerTaqEnabled,
   });
 
   const closeModal = () => {
@@ -137,8 +164,21 @@ function App() {
     const nextCount = hareCards + 1;
     setHareCards(nextCount);
 
-    const tokensToCreate = Math.max(0, nextCount - 1);
-    const amountToAdd = tokensToCreate * multiplier;
+    // Calcula tokens con la próxima cantidad de HareCards
+    const baseTokens = Math.max(0, nextCount - 1);
+    
+    // Roaming Throne: la habilidad se dispara 2 veces
+    let tokensAfterRoaming = roamingThronEnabled ? baseTokens * 2 : baseTokens;
+    
+    // Exalted Sunborn: duplica (x2)
+    // Ojer Taq: triplica (x3)
+    let amountToAdd = tokensAfterRoaming;
+    if (exaltedSunbornEnabled) {
+      amountToAdd = tokensAfterRoaming * 2;
+    } else if (ojerTaqEnabled) {
+      amountToAdd = tokensAfterRoaming * 3;
+    }
+    
     if (amountToAdd > 0) {
       setUntappedMareado((value) => value + amountToAdd);
     }
@@ -162,35 +202,15 @@ function App() {
         setUntappedMareado(0);
         setTappedMareado(0);
         setHareCards(0);
-        setRoamingThrone(0);
-        setExaltedSunborn(0);
-        setOjerTaq(0);
         closeModal();
       },
     });
   };
 
-  const handleMultiplierCard = (card, value) => {
-    const snapshot = getSnapshot();
-    setUndoState(snapshot);
-
-    if (card === 'roaming') {
-      setRoamingThrone((current) => Math.max(0, current + value));
-      return;
-    }
-
-    if (card === 'sunborn') {
-      setExaltedSunborn((current) => Math.max(0, current + value));
-      return;
-    }
-
-    setOjerTaq((current) => Math.max(0, current + value));
-  };
-
   const openMultiplierModal = () => {
     setModalState({
       title: 'Multiplicadores',
-      message: 'Ajusta los multiplicadores de creación de tokens.',
+      message: 'Activa/desactiva las cartas multiplicadoras',
       type: 'multipliers',
       onConfirm: () => closeModal(),
     });
@@ -199,32 +219,12 @@ function App() {
   const handleDuplicateTokens = () => {
     setModalState({
       title: 'Confirmar',
-      message: '¿Se casteó correctamente esta carta? For each token you control, create a token that’s a copy of that permanent',
+      message: '¿Se casteó correctamente esta carta? For each token you control, create a token that`s a copy of that permanent',
       type: 'confirm',
       onConfirm: () => {
         setUndoState(getSnapshot());
-        const amountToAdd = totalRabbits * duplicateMultiplier;
-        setUntappedMareado((value) => value + amountToAdd);
-        closeModal();
-      },
-    });
-  };
-
-  const handleBlink = () => {
-    setModalState({
-      title: 'Blink',
-      message: '¿Cuántas veces se blinkea?',
-      type: 'prompt',
-      onConfirm: () => {
-        const parsedValue = Number(modalValue || 0);
-        if (!Number.isFinite(parsedValue) || parsedValue < 0) {
-          closeModal();
-          return;
-        }
-
-        setUndoState(getSnapshot());
-        const baseTokens = Math.max(0, hareCards - 1) * hareCards;
-        const amountToAdd = baseTokens * parsedValue;
+        // Aplica los multiplicadores de Exalted y Ojer (Roaming NO aplica aquí)
+        const amountToAdd = applyTokenMultipliers(totalRabbits);
         setUntappedMareado((value) => value + amountToAdd);
         closeModal();
       },
@@ -244,8 +244,40 @@ function App() {
         }
 
         setUndoState(getSnapshot());
-        const baseTokens = Math.max(0, hareCards - 1) * hareCards;
-        const amountToAdd = baseTokens * parsedValue;
+        
+        // Calcular tokens base con el valor actual de hareCards
+        const baseTokens = (hareCards - 1) * parsedValue;
+        
+        // Aplica los multiplicadores de Exalted y Ojer (Roaming NO aplica aquí)
+        const tokensToAdd = applyTokenMultipliers(baseTokens);
+        
+        // Actualizar UntappedMareado
+        setUntappedMareado((value) => value + tokensToAdd);
+        
+        // Actualizar HareCards
+        setHareCards((value) => value + parsedValue);
+        
+        closeModal();
+      },
+    });
+  };
+
+  const handleBlink = () => {
+    setModalState({
+      title: 'Blink',
+      message: '¿Cuántas veces se blinkea?',
+      type: 'prompt',
+      onConfirm: () => {
+        const parsedValue = Number(modalValue || 0);
+        if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+          closeModal();
+          return;
+        }
+
+        setUndoState(getSnapshot());
+        const baseTokens = (hareCards - 1) * hareCards;
+        // Aplica los multiplicadores de Exalted y Ojer (Roaming NO aplica aquí)
+        const amountToAdd = applyTokenMultipliers(baseTokens);
         setUntappedMareado((value) => value + amountToAdd);
         closeModal();
       },
@@ -262,9 +294,9 @@ function App() {
     setUntappedMareado(undoState.untappedMareado);
     setTappedMareado(undoState.tappedMareado);
     setHareCards(undoState.hareCards);
-    setRoamingThrone(undoState.roamingThrone);
-    setExaltedSunborn(undoState.exaltedSunborn);
-    setOjerTaq(undoState.ojerTaq);
+    setRoamingThroneEnabled(undoState.roamingThronEnabled);
+    setExaltedSunbornEnabled(undoState.exaltedSunbornEnabled);
+    setOjerTaqEnabled(undoState.ojerTaqEnabled);
     setUndoState(null);
   };
 
@@ -416,40 +448,49 @@ function App() {
               {modalState.type === 'multipliers' && (
                 <div className="multiplier-list">
                   <div className="multiplier-row">
-                    <span>Roaming Throne</span>
+                    <span>Roaming Throne (dispara habilidad 2 veces)</span>
                     <div className="multiplier-actions">
-                      <button type="button" className="modal-btn secondary" onClick={() => handleMultiplierCard('roaming', -1)}>
-                        -
-                      </button>
-                      <span>{roamingThrone}</span>
-                      <button type="button" className="modal-btn primary" onClick={() => handleMultiplierCard('roaming', 1)}>
-                        +
-                      </button>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="checkbox"
+                          checked={roamingThronEnabled}
+                          onChange={() => setRoamingThroneEnabled(!roamingThronEnabled)}
+                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                        />
+                        {roamingThronEnabled ? 'ON' : 'OFF'}
+                      </label>
                     </div>
                   </div>
                   <div className="multiplier-row">
-                    <span>Exalted Sunborn</span>
+                    <span>Exalted Sunborn (duplica tokens x2)</span>
                     <div className="multiplier-actions">
-                      <button type="button" className="modal-btn secondary" onClick={() => handleMultiplierCard('sunborn', -1)}>
-                        -
-                      </button>
-                      <span>{exaltedSunborn}</span>
-                      <button type="button" className="modal-btn primary" onClick={() => handleMultiplierCard('sunborn', 1)}>
-                        +
-                      </button>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="checkbox"
+                          checked={exaltedSunbornEnabled}
+                          onChange={() => setExaltedSunbornEnabled(!exaltedSunbornEnabled)}
+                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                        />
+                        {exaltedSunbornEnabled ? 'ON' : 'OFF'}
+                      </label>
                     </div>
                   </div>
                   <div className="multiplier-row">
-                    <span>Ojer Taq</span>
+                    <span>Ojer Taq (triplica tokens x3)</span>
                     <div className="multiplier-actions">
-                      <button type="button" className="modal-btn secondary" onClick={() => handleMultiplierCard('ojer', -1)}>
-                        -
-                      </button>
-                      <span>{ojerTaq}</span>
-                      <button type="button" className="modal-btn primary" onClick={() => handleMultiplierCard('ojer', 1)}>
-                        +
-                      </button>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="checkbox"
+                          checked={ojerTaqEnabled}
+                          onChange={() => setOjerTaqEnabled(!ojerTaqEnabled)}
+                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                        />
+                        {ojerTaqEnabled ? 'ON' : 'OFF'}
+                      </label>
                     </div>
+                  </div>
+                  <div className="multiplier-row">
+                    <span style={{ fontWeight: 'bold' }}>Multiplicador Total: {multiplier}</span>
                   </div>
                 </div>
               )}
