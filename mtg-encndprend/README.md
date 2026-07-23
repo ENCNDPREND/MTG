@@ -1,4 +1,18 @@
-# Getting Started with Create React App
+# MTG Encndprend
+
+Aplicación React preparada para publicarse en Netlify.
+
+## Publicación en Netlify
+
+La configuración de despliegue está en `../netlify.toml`. Netlify usa automáticamente:
+
+- Directorio base: `mtg-encndprend`
+- Comando de construcción: `npm run build`
+- Directorio publicado: `build`
+
+Al conectar este repositorio con Netlify, cada cambio enviado a la rama de producción genera un nuevo despliegue. La regla de redirección incluida permite recargar rutas del lado del cliente sin recibir errores 404.
+
+## Desarrollo local
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
