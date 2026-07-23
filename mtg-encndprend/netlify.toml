@@ -1,4 +1,0 @@
-[build]
-  base = "mtg-encndprend"
-  command = "npm ci && npm run build"
-  publish = "build"
