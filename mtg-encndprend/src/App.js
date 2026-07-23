@@ -1,14 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function StatCard({ title, mood, value, onInc, onDec, dark, ariaLabel }) {
+  const [accumulatedDiff, setAccumulatedDiff] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+  const prevValueRef = useRef(value);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    const prevValue = prevValueRef.current;
+
+    // Si el valor cambia, sumamos la diferencia al acumulador
+    if (value !== prevValue) {
+      const delta = value - prevValue;
+
+      setAccumulatedDiff((prev) => prev + delta);
+      setAnimKey((prev) => prev + 1); // Actualizar la key reinicia la animación CSS
+      prevValueRef.current = value;
+
+      // Limpiamos el temporizador anterior para que no se borre el número mientras sigues cliqueando
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+
+      // Reiniciamos la cuenta de 10 segundos
+      timerRef.current = setTimeout(() => {
+        setAccumulatedDiff(0); // Después de 5s de inactividad, borramos el mensaje
+      }, 5000);
+    }
+
+    // Limpieza
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [value]);
+
+  // Variables auxiliares para mostrar u ocultar la sombra
+  const showDiff = accumulatedDiff !== 0;
+  const displayString = accumulatedDiff > 0 ? `+${accumulatedDiff}` : `${accumulatedDiff}`;
+
   return (
     <div className={'stat-card' + (dark ? ' dark' : '')} aria-label={ariaLabel || `${title} ${value}`}>
       <div className="card-title">{title}</div>
       <div className="card-image">{mood}</div>
       <div className="card-footer">
         <button className="btn-small" onClick={onDec} type="button">-</button>
-        <div className="value">{value}</div>
+
+        <div className="value-container" style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+          <div className="value">{value}</div>
+
+          {showDiff && (
+            <div
+              key={animKey} /* Esta key es la que hace que la animación se reinicie con cada clic */
+              className={`value-diff ${accumulatedDiff > 0 ? 'diff-positive' : 'diff-negative'}`}
+            >
+              {displayString}
+            </div>
+          )}
+        </div>
+
         <button className="btn-small" onClick={onInc} type="button">+</button>
       </div>
     </div>
@@ -31,6 +81,7 @@ function App() {
   const [untappedMareado, setUntappedMareado] = useState(0);
   const [tappedMareado, setTappedMareado] = useState(0);
   const [hareCards, setHareCards] = useState(0);
+  const [commanderCounters, setCommanderCounters] = useState(0);
   const [roamingThronEnabled, setRoamingThroneEnabled] = useState(false);
   const [exaltedSunbornEnabled, setExaltedSunbornEnabled] = useState(false);
   const [ojerTaqEnabled, setOjerTaqEnabled] = useState(false);
@@ -41,30 +92,38 @@ function App() {
   const hasNoMareo = untappedNoMareo + tappedNoMareo > 0;
   const hasMareado = untappedMareado + tappedMareado > 0;
   const totalRabbits = untappedNoMareo + tappedNoMareo + untappedMareado + tappedMareado;
-  
+
   // Función helper: aplica los multiplicadores de Exalted y Ojer a CUALQUIER cantidad de tokens
   const applyTokenMultipliers = (baseTokens) => {
+    let multiplier = 1;
+
+    // Exalted Sunborn: x2
     if (exaltedSunbornEnabled) {
-      return baseTokens * 2;
-    } else if (ojerTaqEnabled) {
-      return baseTokens * 3;
+      multiplier *= 2;
     }
-    return baseTokens;
+
+    // Ojer Taq: x3
+    if (ojerTaqEnabled) {
+      multiplier *= 3;
+    }
+
+    // Si ambos están activos: 2 * 3 = x6
+    return baseTokens * multiplier;
   };
-  
+
   // Función para calcular tokens creados por Hare Apparent
   // Base: (HareCards - 1) * HareCards
   const calculateHareTokens = () => {
     const baseTokens = Math.max(0, hareCards - 1) * hareCards;
-    
+
     // Roaming Throne: hace que la habilidad se dispare 2 veces (SOLO en Hare)
     let tokensAfterRoaming = roamingThronEnabled ? baseTokens * 2 : baseTokens;
-    
+
     // Exalted Sunborn: duplica los tokens creados (x2)
     // Ojer Taq: triplica los tokens creados (x3)
     return applyTokenMultipliers(tokensAfterRoaming);
   };
-  
+
   // Multiplicador mostrado en la UI
   const multiplier = calculateHareTokens() > 0 ? calculateHareTokens() / Math.max(0, hareCards - 1) / hareCards || 1 : 1;
 
@@ -77,6 +136,7 @@ function App() {
     roamingThronEnabled,
     exaltedSunbornEnabled,
     ojerTaqEnabled,
+    commanderCounters, // NUEVO
   });
 
   const closeModal = () => {
@@ -111,7 +171,7 @@ function App() {
     const totalUntapped = untappedNoMareo + untappedMareado;
     if (totalUntapped < cost) {
       window.alert('Conejos insuficientes');
-      return;
+      return false; // NUEVO: Retorna falso si falla
     }
 
     const snapshot = getSnapshot();
@@ -126,6 +186,8 @@ function App() {
     setTappedMareado((value) => value + mareadoToTap);
     setUntappedNoMareo((value) => Math.max(0, value - noMareoToTap));
     setTappedNoMareo((value) => value + noMareoToTap);
+
+    return true; // NUEVO: Retorna verdadero si tuvo éxito
   };
 
   const handleHarePlusOne = () => {
@@ -135,21 +197,14 @@ function App() {
     const nextCount = hareCards + 1;
     setHareCards(nextCount);
 
-    // Calcula tokens con la próxima cantidad de HareCards
     const baseTokens = Math.max(0, nextCount - 1);
-    
+
     // Roaming Throne: la habilidad se dispara 2 veces
-    let tokensAfterRoaming = roamingThronEnabled ? baseTokens * 2 : baseTokens;
-    
-    // Exalted Sunborn: duplica (x2)
-    // Ojer Taq: triplica (x3)
-    let amountToAdd = tokensAfterRoaming;
-    if (exaltedSunbornEnabled) {
-      amountToAdd = tokensAfterRoaming * 2;
-    } else if (ojerTaqEnabled) {
-      amountToAdd = tokensAfterRoaming * 3;
-    }
-    
+    const tokensAfterRoaming = roamingThronEnabled ? baseTokens * 2 : baseTokens;
+
+    // REEMPLAZO: Usamos la función helper para que todos los multiplicadores (Exalted y Ojer) se apliquen simultáneamente
+    const amountToAdd = applyTokenMultipliers(tokensAfterRoaming);
+
     if (amountToAdd > 0) {
       setUntappedMareado((value) => value + amountToAdd);
     }
@@ -173,6 +228,7 @@ function App() {
         setUntappedMareado(0);
         setTappedMareado(0);
         setHareCards(0);
+        setCommanderCounters(0); // NUEVO: Reinicia los contadores
         closeModal();
       },
     });
@@ -207,27 +263,26 @@ function App() {
       title: 'Regreso del cementerio',
       message: '¿Cuántos conejos regresan al campo de batalla?',
       type: 'prompt',
-      onConfirm: () => {
-        const parsedValue = Number(modalValue || 0);
-        if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      onConfirm: (currentValue) => {
+        const parsedValue = Number(currentValue || 0);
+        if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
           closeModal();
           return;
         }
 
         setUndoState(getSnapshot());
-        
-        // Calcular tokens base con el valor actual de hareCards
-        const baseTokens = (hareCards - 1) * parsedValue;
-        
-        // Aplica los multiplicadores de Exalted y Ojer (Roaming NO aplica aquí)
-        const tokensToAdd = applyTokenMultipliers(baseTokens);
-        
-        // Actualizar UntappedMareado
+
+        const baseTokens = (hareCards + parsedValue - 1) * parsedValue;
+
+        // NUEVO: Roaming Throne SÍ aplica, porque regresar del cementerio detona habilidades ETB
+        const tokensAfterRoaming = roamingThronEnabled ? baseTokens * 2 : baseTokens;
+
+        // Aplica Exalted Sunborn y Ojer Taq
+        const tokensToAdd = applyTokenMultipliers(tokensAfterRoaming);
+
         setUntappedMareado((value) => value + tokensToAdd);
-        
-        // Actualizar HareCards
         setHareCards((value) => value + parsedValue);
-        
+
         closeModal();
       },
     });
@@ -238,27 +293,30 @@ function App() {
       title: 'Blink',
       message: '¿Cuántas veces se blinkea?',
       type: 'prompt',
-      onConfirm: () => {
-        const parsedValue = Number(modalValue || 0);
-        if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      onConfirm: (currentValue) => {
+        const parsedValue = Number(currentValue || 0);
+        if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
           closeModal();
           return;
         }
 
         setUndoState(getSnapshot());
+
         const baseTokens = (hareCards - 1) * hareCards;
-        // Aplica los multiplicadores de Exalted y Ojer (Roaming NO aplica aquí)
-        const amountToAdd = applyTokenMultipliers(baseTokens);
+
+        // NUEVO: Roaming Throne SÍ aplica al parpadear (blink) permanentes por sus ETB
+        const tokensAfterRoaming = roamingThronEnabled ? baseTokens * 2 : baseTokens;
+
+        // Aplica Exalted Sunborn y Ojer Taq
+        const amountToAdd = applyTokenMultipliers(tokensAfterRoaming);
+
         setUntappedMareado((value) => value + amountToAdd);
         closeModal();
       },
     });
   };
-
   const handleUndo = () => {
-    if (!undoState) {
-      return;
-    }
+    if (!undoState) return;
 
     setUntappedNoMareo(undoState.untappedNoMareo);
     setTappedNoMareo(undoState.tappedNoMareo);
@@ -268,6 +326,7 @@ function App() {
     setRoamingThroneEnabled(undoState.roamingThronEnabled);
     setExaltedSunbornEnabled(undoState.exaltedSunbornEnabled);
     setOjerTaqEnabled(undoState.ojerTaqEnabled);
+    setCommanderCounters(undoState.commanderCounters || 0); // NUEVO
     setUndoState(null);
   };
 
@@ -371,12 +430,35 @@ function App() {
         )}
 
         <div className="actions-grid">
-          <div className="action-btn blue fake-button" aria-label="conejo">
+          <div className="action-btn blue fake-button commander-container" aria-label="conejo">
             <img src="/CruzAzul/baylen-the-haymaker.webp" alt="Baylen the Haymaker" className="button-icon" />
+
+            <div className="commander-controls">
+              <button
+                type="button"
+                className="cmd-btn"
+                onClick={() => { setUndoState(getSnapshot()); setCommanderCounters(c => c + 1); }}
+              >▲</button>
+
+              <span className="cmd-counter">{commanderCounters}</span>
+
+              <button
+                type="button"
+                className="cmd-btn"
+                onClick={() => { setUndoState(getSnapshot()); setCommanderCounters(c => Math.max(0, c - 1)); }}
+              >▼</button>
+            </div>
           </div>
           <ActionButton onClick={() => handleCommanderAction(2)}>Añadir un mana</ActionButton>
           <ActionButton onClick={() => handleCommanderAction(3)}>Robar una carta</ActionButton>
-          <ActionButton onClick={() => handleCommanderAction(4)}>Tres (+1/+1) Trample</ActionButton>
+          <ActionButton onClick={() => {
+            if (handleCommanderAction(4)) {
+              // Si se pagan los 4 conejos, suma 3 contadores
+              setCommanderCounters((prev) => prev + 3);
+            }
+          }}>
+            Tres (+1/+1) Trample
+          </ActionButton>
 
           <div className="action-btn blue fake-button hare-button" aria-label={`Cartas Hare: ${hareCards}`}>
             <img src="/CruzAzul/Hare-apparent.png" alt="Hare apparent" className="button-icon" />
@@ -394,18 +476,18 @@ function App() {
 
         <div className="button-row">
           <div className="add-actions">
-          <ActionButton onClick={addNoMareo}>Agregar sin mareo</ActionButton>
-          <ActionButton onClick={addMareado}>Agregar mareados</ActionButton>
-        </div>
+            <ActionButton onClick={addNoMareo}>Agregar sin mareo</ActionButton>
+            <ActionButton onClick={addMareado}>Agregar mareados</ActionButton>
+          </div>
 
-        <section className="summary-card" aria-label="Resumen de estado">
-          <div>Enderezados sin mareo: {untappedNoMareo}</div>
-          <div>Girados sin mareo: {tappedNoMareo}</div>
-          <div>Enderezados mareados: {untappedMareado}</div>
-          <div>Girados mareados: {tappedMareado}</div>
-          <div>Cartas Hare: {hareCards}</div>
-          <div>Multiplicador: {multiplier}</div>
-        </section>
+          <section className="summary-card" aria-label="Resumen de estado">
+            <div className="summary-data">Enderezados sin mareo: {untappedNoMareo}</div>
+            <div className="summary-data">Girados sin mareo: {tappedNoMareo}</div>
+            <div className="summary-data">Enderezados mareados: {untappedMareado}</div>
+            <div className="summary-data">Girados mareados: {tappedMareado}</div>
+            <div className="summary-data">Cartas Hare: {hareCards}</div>
+            <div className="summary-data">Multiplicador: {multiplier}</div>
+          </section>
         </div>
 
 
@@ -488,8 +570,8 @@ function App() {
                       modalState.onConfirm();
                       return;
                     }
-
-                    modalState.onConfirm();
+                    // CAMBIO AQUÍ: Enviamos modalValue a la función
+                    modalState.onConfirm(modalValue);
                   }}
                 >
                   Aceptar
