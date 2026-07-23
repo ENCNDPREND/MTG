@@ -23,33 +23,7 @@ function ActionButton({ children, variant = 'blue', ...props }) {
   );
 }
 
-function Modal({ title, message, type, value, onValueChange, onCancel, onConfirm }) {
-  return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true">
-      <div className="modal-card">
-        <h3 className="modal-title">{title}</h3>
-        <p className="modal-message">{message}</p>
-        {type === 'prompt' && (
-          <input
-            className="modal-input"
-            type="number"
-            min="0"
-            value={value}
-            onChange={(event) => onValueChange(event.target.value)}
-          />
-        )}
-        <div className="modal-actions">
-          <button className="modal-btn secondary" type="button" onClick={onCancel}>
-            Cancelar
-          </button>
-          <button className="modal-btn primary" type="button" onClick={onConfirm}>
-            Aceptar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+
 
 function App() {
   const [untappedNoMareo, setUntappedNoMareo] = useState(0);
@@ -93,9 +67,6 @@ function App() {
   
   // Multiplicador mostrado en la UI
   const multiplier = calculateHareTokens() > 0 ? calculateHareTokens() / Math.max(0, hareCards - 1) / hareCards || 1 : 1;
-  
-  // Duplicate Tokens multiplier: Exalted duplica (x2), Ojer triplica (x3), Roaming NO afecta
-  const duplicateMultiplier = exaltedSunbornEnabled ? 2 : (ojerTaqEnabled ? 3 : 1);
 
   const getSnapshot = () => ({
     untappedNoMareo,
